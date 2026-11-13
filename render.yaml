@@ -2,7 +2,7 @@ services:
   - type: web
     name: dreamur-detector-ia
     runtime: python
-    plan: standard           # PyTorch + XGBoost + volúmenes necesitan memoria; Starter suele quedarse corto
+    plan: free           # PyTorch + XGBoost + volúmenes necesitan memoria; Starter suele quedarse corto
     buildCommand: pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu && pip install -r requirements.txt
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /health
