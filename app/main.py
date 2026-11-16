@@ -97,6 +97,28 @@ def predecir(archivo: UploadFile = File(...), modalidad: str = Form("mri"), _=De
     return {"modelo_version": predictor.version, "modalidad": dom, "archivo": meta, "resultado": _publico(pred),
             "zonas": zonas, "informe": informe, "overlay_base64": viz.a_base64(png)}
 
+@app.post("/predict")
+def predict_compat(file: UploadFile = File(...), region: str = Form("cerebro"), _=Depends(auth)):
+    """Puente para el backend .NET: reutiliza la lógica de /predecir y adapta el JSON."""
+    res = predecir(archivo=file, modalidad="mri")
+    pred = res["resultado"]
+    tipo_info = pred["tipo"]
+    probs = pred.get("probabilidades_por_cabeza", {}).get("tipo") or tipo_info.get("probabilidades") or {}
+    
+    # Convierte la versión (ej. "3.0.0" o "v3") a entero para .NET (int? ModeloVersion)
+    digitos = "".join(c for c in str(res["modelo_version"]).split(".")[0] if c.isdigit())
+    ver_num = int(digitos) if digitos else 3
+
+    return {
+        "imagen_valida": True,
+        "tipo_imagen": "resonancia_cerebral",
+        "mensaje": None,
+        "tipo_tumor": tipo_info["clase"],
+        "confianza": tipo_info["confianza"],
+        "probabilidades": probs,
+        "zonas": res["zonas"],
+        "modelo_version": ver_num
+    }
 
 class AnalizarIn(BaseModel):
     estudio_id: uuid.UUID
